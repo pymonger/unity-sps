@@ -6,6 +6,7 @@ from glob import glob
 from urllib.parse import urlparse
 
 import unity_sps_utils
+from airflow.datasets import DatasetAlias, Dataset
 from airflow.decorators import task
 from airflow.models.param import Param
 from airflow.operators.python import get_current_context
@@ -16,6 +17,8 @@ from kubernetes.client import models as k8s
 from airflow import DAG
 
 default_args = {"owner": "unity-sps", "start_date": datetime.utcfromtimestamp(0)}
+
+edr_vic_dataset = DatasetAlias("EDR_VIC")
 
 
 with DAG(
@@ -135,8 +138,8 @@ with DAG(
         ),
     )
 
-    @task
-    def post(params: dict):
+    @task(outlets=[edr_vic_dataset])
+    def post(params: dict, outlet_events=None):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
         dag_run_dir = f"/shared-task-data/{dag_run_id}"
@@ -150,6 +153,8 @@ with DAG(
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")
             output_urls.append(f"s3://{bucket}/{dest_key}")
+        for i in output_urls:
+            outlet_events["EDR_VIC"].add(Dataset(i))
         return output_urls
 
     post_task = post()

@@ -2,6 +2,7 @@ import os
 import re
 from datetime import datetime
 
+from airflow.datasets import DatasetAlias, Dataset
 from airflow.decorators import task
 from airflow.exceptions import AirflowFailException
 from airflow.models.param import Param
@@ -13,6 +14,10 @@ from airflow.utils.trigger_rule import TriggerRule
 from airflow import DAG
 
 default_args = {"owner": "unity-sps", "start_date": datetime.utcfromtimestamp(0)}
+
+dat_dataset = DatasetAlias("DAT")
+emd_dataset = DatasetAlias("EMD")
+fsw_dataset = DatasetAlias("FSW")
 
 FNAME_RE = re.compile(
     r"^(?P<id>(?P<apid>\d{4})_(?P<sclk_seconds>\d{10})-(?P<sclk_subseconds>\d{5})-(?P<version>\d{1,3}))\.(?P<ext>\w{3})$"
@@ -32,8 +37,8 @@ with DAG(
     },
 ) as dag:
 
-    @task
-    def evaluate_edrgen(params: dict):
+    @task(outlets=[dat_dataset, emd_dataset, fsw_dataset])
+    def evaluate_edrgen(params: dict, outlet_events=None):
         s3_hook = S3Hook()
 
         # parse triggering payload
@@ -77,6 +82,7 @@ with DAG(
             edrgen_args["success"] &= exists
             if exists:
                 edrgen_args[f"{k}_url"] = f"s3://{v[0]}/{v[1]}"
+                outlet_events[k.split("_")[0].upper()].add(Dataset(edrgen_args[f"{k}_url"]))
 
         # return params and evaluation result
         return edrgen_args
