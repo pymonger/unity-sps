@@ -1,3 +1,4 @@
+import re
 import os
 import shutil
 import subprocess
@@ -17,6 +18,9 @@ from airflow import DAG
 
 default_args = {"owner": "unity-sps", "start_date": datetime.utcfromtimestamp(0)}
 
+VIC_RE = re.compile(
+    "(?<=/)(?P<instrument>SA|SB|FL|FR)(?P<color>[A-GJ-MORTX-Z_])(?P<specFlag>[A-Z_])(?P<primaryTime>\d{4})(?P<spacer0>[A-Z_])(?P<secondaryTime>\d{10})(?P<spacer1>_)(?P<tertiaryTime>\d{3})(?P<prodType>[A-Z_]{3})(?P<geometry>[NT])(?P<seqId>[A-Z]{3}[A-Z_]\d{5})(?P<downsample>[0-3_])(?P<compression>[A-Z0-9]{2})(?P<producer>[A-Z_])(?P<version>[A-Z0-9_]{2})(?P<extension>\.VIC)$"
+)
 
 with DAG(
     dag_id="rdrgen",
@@ -94,7 +98,8 @@ with DAG(
         task_id="rdrgen",
         name="rdrgen",
         namespace="sps",
-        image="pymonger/srl-idps-rdrgen:multiarch-test",
+        image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/rdrgen:develop",
+        #image="pymonger/srl-idps-rdrgen:multiarch-test",
         cmds=["/bin/tcsh"],
         arguments=prep_task,
         do_xcom_push=True,
@@ -141,8 +146,13 @@ with DAG(
         s3_hook = S3Hook()
         bucket, prefix = s3_hook.parse_s3_url(params["output_url"])
         output_urls = []
+        match = VIC_RE.search(params["vic_url"])
+        if not match:
+            raise RuntimeError("Failed to match regex.")
+        gpd = match.groupdict()
         for i in glob(os.path.join(stage_out_dir, "*.VIC")):
-            dest_key = os.path.join(prefix, os.path.basename(i))
+            new_file_name = f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}EDRNAUT_040960LUJ01.VIC"
+            dest_key = os.path.join(prefix, new_file_name)
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")
             output_urls.append(f"s3://{bucket}/{dest_key}")

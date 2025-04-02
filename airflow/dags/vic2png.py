@@ -1,3 +1,4 @@
+import re
 import os
 import shutil
 import subprocess
@@ -16,6 +17,10 @@ from kubernetes.client import models as k8s
 from airflow import DAG
 
 default_args = {"owner": "unity-sps", "start_date": datetime.utcfromtimestamp(0)}
+
+VIC_RE = re.compile(
+    "(?<=/)(?P<instrument>SA|SB|FL|FR)(?P<color>[A-GJ-MORTX-Z_])(?P<specFlag>[A-Z_])(?P<primaryTime>\d{4})(?P<spacer0>[A-Z_])(?P<secondaryTime>\d{10})(?P<spacer1>_)(?P<tertiaryTime>\d{3})(?P<prodType>[A-Z_]{3})(?P<geometry>[NT])(?P<seqId>[A-Z]{3}[A-Z_]\d{5})(?P<downsample>[0-3_])(?P<compression>[A-Z0-9]{2})(?P<producer>[A-Z_])(?P<version>[A-Z0-9_]{2})(?P<extension>\.VIC)$"
+)
 
 
 with DAG(
@@ -80,7 +85,8 @@ with DAG(
         task_id="vic2png",
         name="vic2png",
         namespace="sps",
-        image="pymonger/srl-idps-vic2png:develop",
+        image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/vic2png:develop",
+        #image="pymonger/srl-idps-vic2png:develop",
         # cmds=[
         #   "sh",
         #   "-c",
@@ -131,8 +137,13 @@ with DAG(
         s3_hook = S3Hook()
         bucket, prefix = s3_hook.parse_s3_url(params["output_url"])
         output_urls = []
+        match = VIC_RE.search(params["vic_url"])
+        if not match:
+            raise RuntimeError("Failed to match regex.")
+        gpd = match.groupdict()
         for i in glob(os.path.join(stage_out_dir, "*.png")):
-            dest_key = os.path.join(prefix, os.path.basename(i))
+            new_file_name = f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}EDRNAUT_040960LUJ01.png"
+            dest_key = os.path.join(prefix, new_file_name)
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")
             output_urls.append(f"s3://{bucket}/{dest_key}")

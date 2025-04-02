@@ -1,3 +1,4 @@
+import re
 import os
 import shutil
 import subprocess
@@ -16,6 +17,10 @@ from kubernetes.client import models as k8s
 from airflow import DAG
 
 default_args = {"owner": "unity-sps", "start_date": datetime.utcfromtimestamp(0)}
+
+RAWDP_RE = re.compile(
+    "(?<=/)(?P<apid>0980|0990)_(?P<sclk_seconds>\d{10})-(?P<sclk_subseconds>\d{5})-(?P<version>\d{1,3})(?P<extension>\.dat|\.emd)$"
+)
 
 
 with DAG(
@@ -94,7 +99,8 @@ with DAG(
         task_id="edrgen",
         name="edrgen",
         namespace="sps",
-        image="pymonger/srl-idps-edrgen:develop",
+        image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/edrgen:develop",
+        #image="pymonger/srl-idps-edrgen:develop",
         # cmds=[
         #   "sh",
         #   "-c",
@@ -145,8 +151,15 @@ with DAG(
         s3_hook = S3Hook()
         bucket, prefix = s3_hook.parse_s3_url(params["output_url"])
         output_urls = []
+        match = RAWDP_RE.search(params["dat_url"])
+        if not match:
+            raise RuntimeError("Failed to match regex.")
+        gpd = match.groupdict()
         for i in glob(os.path.join(stage_out_dir, "*.VIC")):
-            dest_key = os.path.join(prefix, os.path.basename(i))
+            new_file_name = (
+                f"SAM_0000_{gpd['sclk_seconds']}_{gpd['sclk_subseconds'][0:3]}ECMNAUT_040960LUJ01.VIC"
+            )
+            dest_key = os.path.join(prefix, new_file_name)
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")
             output_urls.append(f"s3://{bucket}/{dest_key}")
