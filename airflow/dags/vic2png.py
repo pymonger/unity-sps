@@ -118,7 +118,7 @@ with DAG(
         ],
         node_selector={
             "karpenter.sh/nodepool": unity_sps_utils.NODE_POOL_HIGH_WORKLOAD,
-            "node.kubernetes.io/instance-type": "t3.medium",
+            "node.kubernetes.io/instance-type": "c6i.large",
         },
         labels={"pod": unity_sps_utils.POD_LABEL},
         annotations={"karpenter.sh/do-not-disrupt": "true"},
@@ -142,7 +142,7 @@ with DAG(
             raise RuntimeError("Failed to match regex.")
         gpd = match.groupdict()
         for i in glob(os.path.join(stage_out_dir, "*.png")):
-            new_file_name = f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}EDRNAUT_040960LUJ01.png"
+            new_file_name = f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}{gpd['prodType']}NAUT_040960LUJ01.png"
             dest_key = os.path.join(prefix, new_file_name)
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")

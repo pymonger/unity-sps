@@ -132,7 +132,7 @@ with DAG(
         ],
         node_selector={
             "karpenter.sh/nodepool": unity_sps_utils.NODE_POOL_HIGH_WORKLOAD,
-            "node.kubernetes.io/instance-type": "t3.medium",
+            "node.kubernetes.io/instance-type": "c6i.large",
         },
         labels={"pod": unity_sps_utils.POD_LABEL},
         annotations={"karpenter.sh/do-not-disrupt": "true"},
