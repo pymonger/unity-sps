@@ -35,7 +35,7 @@ with DAG(
 ) as dag:
 
     @task
-    def enumerate_evaluators(params: dict):
+    def enumerate_evaluators(params: dict, weight_rule: str = "upstream"):
         payload = params["payload"]
         evaluators = []
         for route_cfg in ROUTER_CFG:
@@ -49,7 +49,10 @@ with DAG(
     enumerate_evals_task = enumerate_evaluators()
 
     trigger_eval_task = TriggerDagRunOperator.partial(
-        task_id="route_payload_to_evaluator", wait_for_completion=False, trigger_rule=TriggerRule.ALL_SUCCESS
+        task_id="route_payload_to_evaluator",
+        wait_for_completion=False,
+        trigger_rule=TriggerRule.ALL_SUCCESS,
+        weight_rule="upstream"
     ).expand_kwargs(enumerate_evals_task)
 
     enumerate_evals_task >> trigger_eval_task

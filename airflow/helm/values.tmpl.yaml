@@ -17,6 +17,10 @@
 ---
 # Source of default values: https://github.com/apache/airflow/blob/main/chart/values.yaml
 
+# executor
+executor: "CeleryKubernetesExecutor"
+allowPodLaunching: true
+
 # Airflow create user job settings
 createUserJob:
   # In case you need to disable the helm hooks that create the jobs after install.
@@ -97,7 +101,7 @@ scheduler:
             values: ["r5"] # Choosing memory-optimized instance
           - key: "karpenter.k8s.aws/instance-cpu"
             operator: "In"
-            values: ["8"]
+            values: ["16", "32"]
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: "topology.kubernetes.io/zone"
@@ -134,7 +138,7 @@ triggerer:
                 values: [ "r5" ] # Choosing memory-optimized instance
               - key: "karpenter.k8s.aws/instance-cpu"
                 operator: "In"
-                values: [ "8" ] # Scheduler might benefit from higher CPU
+                values: [ "16", "32" ] # Scheduler might benefit from higher CPU
 
 postgresql:
   enabled: false
@@ -158,7 +162,7 @@ pgbouncer:
                 values: [ "r5" ] # Choosing memory-optimized instance
               - key: "karpenter.k8s.aws/instance-cpu"
                 operator: "In"
-                values: [ "8" ] # Scheduler might benefit from higher CPU
+                values: [ "16", "32" ] # Scheduler might benefit from higher CPU
 
 webserverSecretKeySecretName: ${webserver_secret_name}
 
@@ -186,7 +190,7 @@ webserver:
             values: ["r5"] # Choosing memory-optimized instance
           - key: "karpenter.k8s.aws/instance-cpu"
             operator: "In"
-            values: ["8"] # Balancing between CPU and memory
+            values: ["16", "32"] # Balancing between CPU and memory
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: "topology.kubernetes.io/zone"
@@ -224,7 +228,7 @@ workers:
             values: ["r5"] # Choosing memory-optimized instance
           - key: "karpenter.k8s.aws/instance-cpu"
             operator: "In"
-            values: ["8"]
+            values: ["16", "32"]
   topologySpreadConstraints:
   - maxSkew: 1
     topologyKey: "topology.kubernetes.io/zone"
@@ -280,11 +284,11 @@ data:
 
 config:
   logging:
-    remote_logging: true
+    remote_logging: 'True'
     logging_level: "INFO"
     remote_base_log_folder: ${airflow_logs_s3_location}
     remote_log_conn_id: "aws_default"
-    encrypt_s3_logs: false
+    encrypt_s3_logs: 'False'
   celery:
     worker_concurrency: 16
   webserver:
@@ -316,7 +320,7 @@ dagProcessor:
                 values: [ "r5" ] # Choosing memory-optimized instance
               - key: "karpenter.k8s.aws/instance-cpu"
                 operator: "In"
-                values: [ "8" ] # Scheduler might benefit from higher CPU
+                values: [ "16", "32" ] # Scheduler might benefit from higher CPU
 
 env:
   - name: "AIRFLOW_VAR_KUBERNETES_PIPELINE_NAMESPACE"
@@ -345,7 +349,7 @@ extraEnv: |
   - name: AIRFLOW__CORE__PARALLELISM
     value: "32768"
   - name: AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG
-    value: "1024"
+    value: "10240"
   - name: AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG
     value: "4096"
   - name: AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP
@@ -355,7 +359,7 @@ extraEnv: |
   - name: AIRFLOW__SCHEDULER__TASK_QUEUED_TIMEOUT
     value: "7200"
   - name: AIRFLOW__KUBERNETES__WORKER_PODS_CREATION_BATCH_SIZE
-    value: "8"
+    value: "16"
   - name: AIRFLOW__WEBSERVER__NAVBAR_COLOR
     value: "${webserver_navbar_color}"
   - name: AIRFLOW__WEBSERVER__INSTANCE_NAME
@@ -365,6 +369,10 @@ extraEnv: |
   - name: AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
     value: "5"
   - name: AIRFLOW__CORE__DEFAULT_POOL_TASK_SLOT_COUNT
-    value: "1000"
+    value: "5000"
   - name: AIRFLOW__WEBSERVER__EXPOSE_CONFIG
     value: "True"
+  - name: AIRFLOW__CELERY__WORKER_AUTOSCALE
+    value: "32,28"
+  - name: AIRFLOW__CELERY__WORKER_CONCURRENCY
+    value: "32"

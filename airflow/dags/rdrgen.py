@@ -37,7 +37,7 @@ with DAG(
 ) as dag:
 
     @task
-    def prep(params: dict):
+    def prep(params: dict, weight_rule: str = "upstream"):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
         original_umask = os.umask(0)
@@ -96,6 +96,7 @@ with DAG(
     prep_task = prep()
 
     rdrgen = KubernetesPodOperator(
+        weight_rule="upstream",
         task_id="rdrgen",
         name="rdrgen",
         namespace="sps",
@@ -112,7 +113,7 @@ with DAG(
         container_logs=True,
         service_account_name="airflow-worker",
         container_security_context={"privileged": True},
-        retries=0,
+        retries=3,
         volume_mounts=[
             k8s.V1VolumeMount(
                 name="workers-volume", mount_path="/stage-in", sub_path="{{ dag_run.run_id }}/stage-in"
@@ -139,7 +140,7 @@ with DAG(
     )
 
     @task
-    def post(params: dict):
+    def post(params: dict, weight_rule: str = "upstream"):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
         dag_run_dir = f"/shared-task-data/{dag_run_id}"
