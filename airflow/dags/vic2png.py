@@ -37,8 +37,8 @@ with DAG(
     },
 ) as dag:
 
-    @task
-    def prep(params: dict, weight_rule: str = "upstream"):
+    @task(priority_weight=1, weight_rule="absolute")
+    def prep(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
         original_umask = os.umask(0)
@@ -82,7 +82,8 @@ with DAG(
     prep_task = prep()
 
     vic2png_task = KubernetesPodOperator(
-        weight_rule="upstream",
+        priority_weight=2,
+        weight_rule="absolute",
         task_id="vic2png",
         name="vic2png",
         namespace="sps",
@@ -128,8 +129,8 @@ with DAG(
         ),
     )
 
-    @task
-    def post(params: dict, weight_rule: str = "upstream"):
+    @task(priority_weight=3, weight_rule="absolute")
+    def post(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
         dag_run_dir = f"/shared-task-data/{dag_run_id}"

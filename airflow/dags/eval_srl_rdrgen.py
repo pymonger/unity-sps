@@ -32,8 +32,8 @@ with DAG(
     },
 ) as dag:
 
-    @task
-    def evaluate_rdrgen(params: dict, weight_rule: str = "upstream"):
+    @task(priority_weight=1, weight_rule="absolute")
+    def evaluate_rdrgen(params: dict):
         s3_hook = S3Hook()
 
         # parse triggering payload
@@ -69,8 +69,8 @@ with DAG(
 
     evaluate_rdrgen_task = evaluate_rdrgen()
 
-    @task.short_circuit()
-    def rdrgen_evaluation_successful(weight_rule: str = "upstream"):
+    @task.short_circuit(priority_weight=2, weight_rule="absolute")
+    def rdrgen_evaluation_successful():
         context = get_current_context()
         print(f"{context['ti'].xcom_pull(task_ids='evaluate_rdrgen')}")
         rdrgen_args = context["ti"].xcom_pull(task_ids="evaluate_rdrgen")
@@ -81,7 +81,8 @@ with DAG(
     rdrgen_evaluation_successful_task = rdrgen_evaluation_successful()
 
     trigger_rdrgen_task = TriggerDagRunOperator(
-        weight_rule="upstream",
+        priority_weight=3,
+        weight_rule="absolute",
         task_id="trigger_rdrgen",
         trigger_dag_id="rdrgen",
         # uncomment the next line if we want to dedup dagRuns for a particular ID
