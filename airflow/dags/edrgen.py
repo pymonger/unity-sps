@@ -45,7 +45,7 @@ with DAG(
     },
 ) as dag:
 
-    @task(weight_rule="upstream")
+    @task(weight_rule="absolute", priority_weight=103)
     def prep(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
@@ -96,7 +96,8 @@ with DAG(
     prep_task = prep()
 
     edrgen_task = KubernetesPodOperator(
-        weight_rule="upstream",
+        weight_rule="absolute",
+        priority_weight=104,
         task_id="edrgen",
         name="edrgen",
         namespace="sps",
@@ -142,7 +143,7 @@ with DAG(
         ),
     )
 
-    @task(weight_rule="upstream")
+    @task(weight_rule="absolute", priority_weight=105)
     def post(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
