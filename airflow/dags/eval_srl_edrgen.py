@@ -32,7 +32,7 @@ with DAG(
     },
 ) as dag:
 
-    @task(priority_weight=1, weight_rule="absolute")
+    @task(weight_rule="upstream")
     def evaluate_edrgen(params: dict):
         s3_hook = S3Hook()
 
@@ -83,7 +83,7 @@ with DAG(
 
     evaluate_edrgen_task = evaluate_edrgen()
 
-    @task.short_circuit(priority_weight=2, weight_rule="absolute")
+    @task.short_circuit(weight_rule="upstream")
     def edrgen_evaluation_successful():
         context = get_current_context()
         print(f"{context['ti'].xcom_pull(task_ids='evaluate_edrgen')}")
@@ -92,8 +92,7 @@ with DAG(
     edrgen_evaluation_successful_task = edrgen_evaluation_successful()
 
     trigger_edrgen_task = TriggerDagRunOperator(
-        priority_weight=3,
-        weight_rule="absolute",
+        weight_rule="upstream",
         task_id="trigger_edrgen",
         trigger_dag_id="edrgen",
         # uncomment the next line if we want to dedup dagRuns for a particular ID
