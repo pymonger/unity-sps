@@ -43,6 +43,9 @@ with DAG(
         ),
         "output_url": Param("s3://unity-gmanipon-ads-deployment-dev/output", type="string"),
     },
+    #max_active_runs=10240,
+    #max_active_tasks=10240,
+    #concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=103)
@@ -139,7 +142,7 @@ with DAG(
         labels={"pod": unity_sps_utils.POD_LABEL},
         annotations={"karpenter.sh/do-not-disrupt": "true"},
         affinity=unity_sps_utils.get_affinity(
-            capacity_type=["on-demand"], anti_affinity_label=unity_sps_utils.POD_LABEL
+            capacity_type=["spot"], anti_affinity_label=unity_sps_utils.POD_LABEL
         ),
     )
 

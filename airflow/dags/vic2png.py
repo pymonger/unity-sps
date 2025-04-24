@@ -35,9 +35,12 @@ with DAG(
         ),
         "output_url": Param("s3://unity-gmanipon-ads-deployment-dev/output", type="string"),
     },
+    #max_active_runs=10240,
+    #max_active_tasks=10240,
+    #concurrency=10240,
 ) as dag:
 
-    @task(weight_rule="absolute", priority_weight=113)
+    @task(weight_rule="absolute", priority_weight=103)
     def prep(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
@@ -83,7 +86,7 @@ with DAG(
 
     vic2png_task = KubernetesPodOperator(
         weight_rule="absolute",
-        priority_weight=114,
+        priority_weight=104,
         task_id="vic2png",
         name="vic2png",
         namespace="sps",
@@ -125,11 +128,11 @@ with DAG(
         labels={"pod": unity_sps_utils.POD_LABEL},
         annotations={"karpenter.sh/do-not-disrupt": "true"},
         affinity=unity_sps_utils.get_affinity(
-            capacity_type=["on-demand"], anti_affinity_label=unity_sps_utils.POD_LABEL
+            capacity_type=["spot"], anti_affinity_label=unity_sps_utils.POD_LABEL
         ),
     )
 
-    @task(weight_rule="absolute", priority_weight=115)
+    @task(weight_rule="absolute", priority_weight=105)
     def post(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id

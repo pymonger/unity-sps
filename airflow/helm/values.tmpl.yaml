@@ -18,8 +18,14 @@
 # Source of default values: https://github.com/apache/airflow/blob/main/chart/values.yaml
 
 # executor
-executor: "CeleryKubernetesExecutor"
-allowPodLaunching: true
+#executor: "CeleryKubernetesExecutor"
+#allowPodLaunching: true
+
+# airflow pools
+#pools:
+#  - name: "default_pool"
+#    description: "Default pool"
+#    slots: 32768
 
 # Airflow create user job settings
 createUserJob:
@@ -248,7 +254,7 @@ workers:
   keda:
     enabled: true
     pollingInterval: 1
-    minReplicaCount: 1
+    minReplicaCount: 8
     maxReplicaCount: 128
     # Specify HPA related options
     # https://github.com/kubernetes/enhancements/blob/master/keps/sig-autoscaling/853-configurable-hpa-scale-velocity/README.md
@@ -290,7 +296,7 @@ config:
     remote_log_conn_id: "aws_default"
     encrypt_s3_logs: 'False'
   celery:
-    worker_concurrency: 16
+    worker_concurrency: 64
   webserver:
     enable_proxy_fix: 'True'
 
@@ -349,11 +355,15 @@ extraEnv: |
   - name: AIRFLOW__CORE__PARALLELISM
     value: "32768"
   - name: AIRFLOW__CORE__MAX_ACTIVE_RUNS_PER_DAG
-    value: "10240"
+    value: "10000"
   - name: AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG
-    value: "4096"
+    value: "10000"
   - name: AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP
-    value: "256"
+    value: "50"
+  - name: AIRFLOW__SCHEDULER__MAX_DAGRUNS_PER_LOOP_TO_SCHEDULE
+    value: "50"
+  - name: AIRFLOW__SCHEDULER__MAX_TIS_PER_QUERY
+    value: "0"
   - name: AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC
     value: "1"
   - name: AIRFLOW__SCHEDULER__TASK_QUEUED_TIMEOUT
@@ -367,11 +377,11 @@ extraEnv: |
   - name: AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL
     value: "10"
   - name: AIRFLOW__SCHEDULER__MIN_FILE_PROCESS_INTERVAL
-    value: "5"
-  - name: AIRFLOW__CORE__DEFAULT_POOL_TASK_SLOT_COUNT
-    value: "5000"
+    value: "0"
   - name: AIRFLOW__WEBSERVER__EXPOSE_CONFIG
     value: "True"
+  - name: AIRFLOW__CORE__DEFAULT_POOL_TASK_SLOT_COUNT
+    value: "32768"
   #- name: AIRFLOW__CELERY__WORKER_AUTOSCALE
   #  value: "64,56"
   #- name: AIRFLOW__CELERY__WORKER_CONCURRENCY
