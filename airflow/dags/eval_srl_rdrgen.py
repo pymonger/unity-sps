@@ -35,7 +35,7 @@ with DAG(
     #concurrency=10240,
 ) as dag:
 
-    @task(weight_rule="absolute", priority_weight=100)
+    @task(weight_rule="absolute", priority_weight=106)
     def evaluate_rdrgen(params: dict):
         s3_hook = S3Hook()
 
@@ -72,7 +72,7 @@ with DAG(
 
     evaluate_rdrgen_task = evaluate_rdrgen()
 
-    @task.short_circuit(weight_rule="absolute", priority_weight=101)
+    @task.short_circuit(weight_rule="absolute", priority_weight=107)
     def rdrgen_evaluation_successful():
         context = get_current_context()
         print(f"{context['ti'].xcom_pull(task_ids='evaluate_rdrgen')}")
@@ -85,7 +85,7 @@ with DAG(
 
     trigger_rdrgen_task = TriggerDagRunOperator(
         weight_rule="absolute",
-        priority_weight=102,
+        priority_weight=108,
         task_id="trigger_rdrgen",
         trigger_dag_id="rdrgen",
         # uncomment the next line if we want to dedup dagRuns for a particular ID

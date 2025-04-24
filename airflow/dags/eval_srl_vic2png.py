@@ -35,7 +35,7 @@ with DAG(
     #concurrency=10240,
 ) as dag:
 
-    @task(weight_rule="absolute", priority_weight=100)
+    @task(weight_rule="absolute", priority_weight=112)
     def evaluate_vic2png(params: dict):
         s3_hook = S3Hook()
 
@@ -67,7 +67,7 @@ with DAG(
 
     evaluate_vic2png_task = evaluate_vic2png()
 
-    @task.short_circuit(weight_rule="absolute", priority_weight=101)
+    @task.short_circuit(weight_rule="absolute", priority_weight=113)
     def vic2png_evaluation_successful():
         context = get_current_context()
         print(f"{context['ti'].xcom_pull(task_ids='evaluate_vic2png')}")
@@ -77,7 +77,7 @@ with DAG(
 
     trigger_vic2png_task = TriggerDagRunOperator(
         weight_rule="absolute",
-        priority_weight=102,
+        priority_weight=114,
         task_id="trigger_vic2png",
         trigger_dag_id="vic2png",
         # uncomment the next line if we want to dedup dagRuns for a particular ID

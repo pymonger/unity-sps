@@ -39,7 +39,7 @@ with DAG(
     #concurrency=10240,
 ) as dag:
 
-    @task(weight_rule="absolute", priority_weight=103)
+    @task(weight_rule="absolute", priority_weight=109)
     def prep(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id
@@ -100,7 +100,7 @@ with DAG(
 
     rdrgen = KubernetesPodOperator(
         weight_rule="absolute",
-        priority_weight=104,
+        priority_weight=110,
         task_id="rdrgen",
         name="rdrgen",
         namespace="sps",
@@ -143,7 +143,7 @@ with DAG(
         ),
     )
 
-    @task(weight_rule="absolute", priority_weight=105)
+    @task(weight_rule="absolute", priority_weight=111)
     def post(params: dict):
         context = get_current_context()
         dag_run_id = context["dag_run"].run_id

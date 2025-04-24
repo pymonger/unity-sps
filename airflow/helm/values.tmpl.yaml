@@ -90,7 +90,7 @@ labels:
   app: airflow
 
 scheduler:
-  replicas: 3
+  replicas: 8
   nodeSelector:
     "karpenter.sh/nodepool": "airflow-core-components"
   affinity:
@@ -254,7 +254,7 @@ workers:
   keda:
     enabled: true
     pollingInterval: 1
-    minReplicaCount: 8
+    minReplicaCount: 1
     maxReplicaCount: 128
     # Specify HPA related options
     # https://github.com/kubernetes/enhancements/blob/master/keps/sig-autoscaling/853-configurable-hpa-scale-velocity/README.md
@@ -359,9 +359,9 @@ extraEnv: |
   - name: AIRFLOW__CORE__MAX_ACTIVE_TASKS_PER_DAG
     value: "10000"
   - name: AIRFLOW__SCHEDULER__MAX_DAGRUNS_TO_CREATE_PER_LOOP
-    value: "50"
+    value: "1000"
   - name: AIRFLOW__SCHEDULER__MAX_DAGRUNS_PER_LOOP_TO_SCHEDULE
-    value: "50"
+    value: "1000"
   - name: AIRFLOW__SCHEDULER__MAX_TIS_PER_QUERY
     value: "0"
   - name: AIRFLOW__SCHEDULER__SCHEDULER_HEARTBEAT_SEC
@@ -369,7 +369,7 @@ extraEnv: |
   - name: AIRFLOW__SCHEDULER__TASK_QUEUED_TIMEOUT
     value: "7200"
   - name: AIRFLOW__KUBERNETES__WORKER_PODS_CREATION_BATCH_SIZE
-    value: "16"
+    value: "1000"
   - name: AIRFLOW__WEBSERVER__NAVBAR_COLOR
     value: "${webserver_navbar_color}"
   - name: AIRFLOW__WEBSERVER__INSTANCE_NAME
