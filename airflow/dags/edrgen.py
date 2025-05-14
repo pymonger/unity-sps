@@ -1,5 +1,5 @@
-import re
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -43,9 +43,9 @@ with DAG(
         ),
         "output_url": Param("s3://unity-gmanipon-ads-deployment-dev/output", type="string"),
     },
-    #max_active_runs=10240,
-    #max_active_tasks=10240,
-    #concurrency=10240,
+    # max_active_runs=10240,
+    # max_active_tasks=10240,
+    # concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=103)
@@ -105,7 +105,7 @@ with DAG(
         name="edrgen",
         namespace="sps",
         image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/edrgen:develop",
-        #image="pymonger/srl-idps-edrgen:develop",
+        # image="pymonger/srl-idps-edrgen:develop",
         # cmds=[
         #   "sh",
         #   "-c",

@@ -1,5 +1,5 @@
-import re
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -35,9 +35,9 @@ with DAG(
         ),
         "output_url": Param("s3://unity-gmanipon-ads-deployment-dev/output", type="string"),
     },
-    #max_active_runs=10240,
-    #max_active_tasks=10240,
-    #concurrency=10240,
+    # max_active_runs=10240,
+    # max_active_tasks=10240,
+    # concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=115)
@@ -91,7 +91,7 @@ with DAG(
         name="vic2png",
         namespace="sps",
         image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/vic2png:develop",
-        #image="pymonger/srl-idps-vic2png:develop",
+        # image="pymonger/srl-idps-vic2png:develop",
         # cmds=[
         #   "sh",
         #   "-c",
@@ -147,7 +147,9 @@ with DAG(
             raise RuntimeError("Failed to match regex.")
         gpd = match.groupdict()
         for i in glob(os.path.join(stage_out_dir, "*.png")):
-            new_file_name = f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}{gpd['prodType']}NAUT_040960LUJ01.png"
+            new_file_name = (
+                f"SAM_0000_{gpd['secondaryTime']}_{gpd['tertiaryTime']}{gpd['prodType']}NAUT_040960LUJ01.png"
+            )
             dest_key = os.path.join(prefix, new_file_name)
             s3_hook.load_file(bucket_name=bucket, key=dest_key, filename=i, replace=True)
             print(f"Copying {i} to {dest_key}.")

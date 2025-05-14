@@ -1,5 +1,5 @@
-import re
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -34,9 +34,9 @@ with DAG(
         ),
         "output_url": Param("s3://unity-gmanipon-ads-deployment-dev/output", type="string"),
     },
-    #max_active_runs=10240,
-    #max_active_tasks=10240,
-    #concurrency=10240,
+    # max_active_runs=10240,
+    # max_active_tasks=10240,
+    # concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=109)
@@ -88,8 +88,11 @@ with DAG(
 
         # cli_args = ["-c", f"select d && exec $MARSLIB/marsinverter {rdrgen['vic_url']} {output_vic_file}"]
         # KLUDGE: ignore non-zero exit code when no-op occurs
-        #cli_args = ["-c", f"select d && $MARSLIB/marsinverter {rdrgen['vic_url']} {output_vic_file} || :"]
-        cli_args = ["-c", f"export LD_LIBRARY_PATH=/usr/local/vicar/external/xerces-c++/v3.0.0_rhel8/x86-64-linx/lib:/usr/local/vicar/dev/olb/x86-64-linx:/usr/local/vicar/external/embree/v3.7.0/x86-64-linx; /usr/local/vicar/dev/mars/lib/x86-64-linx/marsinverter {rdrgen['vic_url']} {output_vic_file} || :"]
+        # cli_args = ["-c", f"select d && $MARSLIB/marsinverter {rdrgen['vic_url']} {output_vic_file} || :"]
+        cli_args = [
+            "-c",
+            f"export LD_LIBRARY_PATH=/usr/local/vicar/external/xerces-c++/v3.0.0_rhel8/x86-64-linx/lib:/usr/local/vicar/dev/olb/x86-64-linx:/usr/local/vicar/external/embree/v3.7.0/x86-64-linx; /usr/local/vicar/dev/mars/lib/x86-64-linx/marsinverter {rdrgen['vic_url']} {output_vic_file} || :",
+        ]
         res = subprocess.run(["find", dag_run_dir], capture_output=True, text=True)
         print(res.stdout)
         print(res.stderr)
@@ -105,8 +108,8 @@ with DAG(
         name="rdrgen",
         namespace="sps",
         image="429178552491.dkr.ecr.us-west-2.amazonaws.com/srl-idps/rdrgen:develop-multiarch",
-        #image="pymonger/srl-idps-rdrgen:multiarch-test",
-        #cmds=["/bin/tcsh"],
+        # image="pymonger/srl-idps-rdrgen:multiarch-test",
+        # cmds=["/bin/tcsh"],
         cmds=["/bin/bash"],
         arguments=prep_task,
         do_xcom_push=True,
