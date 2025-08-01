@@ -30,6 +30,9 @@ with DAG(
             type="string",
         )
     },
+    #max_active_runs=10240,
+    #max_active_tasks=10240,
+    #concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=112)

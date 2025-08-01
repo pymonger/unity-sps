@@ -30,6 +30,9 @@ with DAG(
             type="string",
         )
     },
+    #max_active_runs=10240,
+    #max_active_tasks=10240,
+    #concurrency=10240,
 ) as dag:
 
     @task(weight_rule="absolute", priority_weight=100)
@@ -83,7 +86,7 @@ with DAG(
 
     evaluate_edrgen_task = evaluate_edrgen()
 
-    @task.short_circuit()
+    @task.short_circuit(weight_rule="absolute", priority_weight=101)
     def edrgen_evaluation_successful():
         context = get_current_context()
         print(f"{context['ti'].xcom_pull(task_ids='evaluate_edrgen')}")
